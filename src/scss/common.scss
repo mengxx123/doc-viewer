@@ -1,0 +1,79 @@
+body {
+    background-color: #f9f9f9;
+}
+.left-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 240px;
+    bottom: 0;
+    background-color: #fff;
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
+    overflow: auto;
+}
+.right-box {
+    position: absolute;
+    top: 0;
+    left: 240px;
+    right: 0;
+    bottom: 0;
+    padding: 16px;
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
+    overflow: auto;
+}
+.article {
+    padding: 24px;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.ui-article {
+    h2 {
+        font-size: 32px;
+        font-weight: bold;
+        //padding-left: 16px;
+        //border-left: 4px solid #999;
+    }
+    h3 {
+        font-size: 20px;
+        font-weight: bold;
+    }
+    h4 {
+        margin: 16px 0;
+    }
+    blockquote {
+        margin: 0;
+        padding-left: 16px;
+        border-left: 4px solid #999;
+    }
+    pre {
+        margin-bottom: 8px;
+    }
+}
+.toc-box {
+    position: absolute;
+    left: 240px;
+    top: 0;
+    width: 320px;
+    padding: 16px;
+    background-color: #fff;
+    box-shadow: 0 1px 6px rgba(0,0,0,.117647), 0 1px 4px rgba(0,0,0,.117647);
+    //border: 1px solid #eee;
+    ul {
+        padding-left: 24px;
+    }
+    li {
+        margin: 4px 0;
+    }
+    a {
+        color: #333;
+        &:hover {
+            color: #009688;
+        }
+    }
+}
+.anchor-fix {
+    display: block;
+    height: 0; /*same height as header*/
+    margin-top: 0; /*same height as header*/
+    visibility: hidden;
+}
