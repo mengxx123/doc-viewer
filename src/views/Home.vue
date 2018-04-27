@@ -1,15 +1,16 @@
 <template>
     <my-page :title="title" :page="page">
         <div class="left-box">
-            <ui-list>
-                <ui-list-item :title="item.title" v-for="item in items"
-                              @click="selectDoc(item)"
-                              :key="item.id">
-                </ui-list-item>
-            </ui-list>
+            <div class="ui-article side-article markdown-body my-article" v-html="sideHtml"></div>
+            <!--<ui-list>-->
+                <!--<ui-list-item :title="item.title" v-for="item in items"-->
+                              <!--@click="selectDoc(item)"-->
+                              <!--:key="item.id">-->
+                <!--</ui-list-item>-->
+            <!--</ui-list>-->
         </div>
-        <div id="article" class="right-box">
-            <ui-article class="article" v-html="html" v-if="isMarkdown"></ui-article>
+        <div id="article" class="right-box my-article">
+            <ui-article class="article markdown-body" v-html="html" v-if="isMarkdown"></ui-article>
             <pre class="content" :style="contentStyle" v-if="!isMarkdown">{{ content }}</pre>
         </div>
         <div class="toc-box" v-html="toc"></div>
@@ -27,8 +28,12 @@
 
 <script>
     /* eslint-disable */
+    import listTable from '../util/markdown-ext/listTable'
+    import todoExt from '../util/markdown-ext/todo'
+    import apiExt from '../util/markdown-ext/api'
     const marked = window.marked
     const Intent = window.Intent
+    const yaml = require('js-yaml')
 
     const tocObj = {
         add: function(text, level) {
@@ -93,11 +98,12 @@
                 isMarkdown: false,
                 open: false,
                 items: [
-
                 ],
+                sideHtml: '',
                 style: {
                     fontSize: 20
                 },
+                url: '',
                 toc: '',
                 page: {
                     menu: [
@@ -121,6 +127,9 @@
         mounted() {
             this.init()
         },
+        destroyed() {
+            $('.my-article').of('click', 'a')
+        },
         methods: {
             init() {
                 // text parameter support
@@ -143,14 +152,28 @@
                 console.log('隐藏')
 //                $('#article').hide()
                 let _this = this
-                $('#article').on('click', 'a', function (e) {
+                $('.my-article').on('click', 'a', function (e) {
                     e.preventDefault()
-                    $(this).hide()
                     let link = this
                     let href = link.getAttribute('href')
-                    _this.loadTextFromUrl(href)
-                    console.log()
+                    console.log('打开' + href, location.origin)
+                    function getOrigin(url) {
+                        let arr = url.split(/[?#]/)
+                        let ret = arr[0]
+                        let index = ret.lastIndexOf('/')
+                        return ret.substring(0, index)
+                    }
+                    let origin = getOrigin(_this.url)
+                    console.log('比较', href, origin, href.includes(origin))
+                    if (href.includes(origin)) {
+                        _this.loadTextFromUrl(href)
+                    } else {
+                        window.open(href)
+                    }
                 })
+
+                console.log('yaml')
+                console.log(yaml.load('greeting: hello\nname: world'))
             },
             edit() {
                 let intent = new Intent({
@@ -165,7 +188,7 @@
 // => <pre class="myClassName javascript">console.log("hello");</pre>
                         this.html = marked(this.content, {
                             renderer: renderer,
-                            baseUrl: this.data.baseUrl
+                            baseUrl: this.url
                         })
                     }
                 }, data => {
@@ -176,6 +199,7 @@
                 this.open = !this.open
             },
             loadTextFromUrl(url) {
+                this.url = url
                 url = url + '?time=' + new Date().getTime()
                 this.$http.get(url).then(
                     response => {
@@ -188,28 +212,51 @@
 
                             console.log('哈哈')
                             let renderer = new marked.Renderer()
-                            renderer.code = function(code, language) {
-                                // ...
-                                return '<pre class="myClassName ' + language + '">' + code + '</pre>'
+                            let defaultCodeRender = renderer.code
+                            renderer.code = (code, language) => {
+                                console.log(code, language)
+                                if (language === 'todo') {
+                                    return todoExt(marked, code)
+                                } if (language === 'table') {
+                                    return listTable(code)
+                                } if (language === 'api') {
+                                    return apiExt(marked, code)
+                                } else {
+                                    let code2 = hljs.highlightAuto(code).value
+                                    return `<pre>
+    <code class="lang-${language}">${code2}</code>
+</pre>`
+                                }
                             }
                             let _this = this
-                            renderer.image = function(href, title, text) {
-                                href = _this.data.baseUrl + href
-                                var out = '<img src="' + href + '" alt="' + text + '"';
-                                if (title) {
-                                    out += ' title="' + title + '"';
-                                }
-                                out += this.options.xhtml ? '/>' : '>';
-                                return out;
-                            };
+//                            renderer.image = function(href, title, text) {
+//                                href = _this.data.baseUrl + href
+//                                var out = '<img src="' + href + '" alt="' + text + '"';
+//                                if (title) {
+//                                    out += ' title="' + title + '"';
+//                                }
+//                                out += this.options.xhtml ? '/>' : '>';
+//                                return out;
+//                            };
                             renderer.heading = function(text, level, raw) {
                                 var anchor = tocObj.add(text, level);
                                 return `<a id=${anchor} class="anchor-fix"></a><h${level}>${text}</h${level}>\n`
                             }
 // => <pre class="myClassName javascript">console.log("hello");</pre>
+                            let baseUrl = ''
+                            function getBaseUrl(url) {
+                                let arr = url.split(/[?#]/)
+                                let ret = arr[0]
+                                let index = ret.lastIndexOf('/')
+                                return ret.substring(0, index)
+                            }
                             this.html = marked(data, {
                                 renderer: renderer,
-                                baseUrl: this.data.baseUrl
+                                highlight: code => {
+                                    console.log('高了', code)
+                                    return hljs.highlightAuto(code).value
+                                },
+                                baseUrl: this.url
                             })
 
                             document.getElementById('article').scrollTop = 0
@@ -223,7 +270,7 @@
                     })
             },
             initIndex() {
-                let url = 'http://192.168.3.60:9999/wsdgy/docs/requirement.json'
+                let url = 'http://192.168.3.60:9999/wsdgy/docs/requirement.json' + '?time=' + new Date().getTime()
                 this.$http.get(url).then(
                     response => {
                         let data = response.data
@@ -231,8 +278,33 @@
                         this.data = data
                         this.title = data.info.title
                         document.title = data.info.title
+
                         this.items = data.items
-                        this.loadTextFromUrl(this.data.baseUrl + this.items[0].url)
+//                        this.loadTextFromUrl(this.data.baseUrl + this.items[0].url)
+                        this.loadTextFromUrl(this.data.homeUrl)
+                        this.loadSideBar()
+                    },
+                    response => {
+                        console.log(response)
+                    })
+            },
+            loadSideBar() {
+                // TODO
+                let url = this.data.tocUrl + '?time=' + new Date().getTime()
+                this.$http.get(url).then(
+                    response => {
+                        let data = response.data
+                        console.log('策略')
+                        console.log(data)
+                        this.sideHtml = marked(data, {
+                            baseUrl: this.url
+                        })
+//                        this.data = data
+//                        this.title = data.info.title
+//                        document.title = data.info.title
+//                        this.loadTextFromUrl(this.data.baseUrl + this.items[0].url)
+//                        this.loadSideBar()
+//                        this.items = data.items
                     },
                     response => {
                         console.log(response)
