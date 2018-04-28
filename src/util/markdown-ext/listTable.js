@@ -1,4 +1,4 @@
-function listTable(code) {
+function extension(marked, code) {
     let table = ''
     let trs = ''
     let groups = code.split(/\n{2,}/)
@@ -9,8 +9,8 @@ function listTable(code) {
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i]
 
-            let match
-            if (match = line.match(/\s*([\*#]+)(\d?)\s+([\w\W]+?)$/)) {
+            let match = line.match(/\s*([*#]+)(\d?)\s+([\w\W]+?)$/)
+            if (match) {
                 let level = match[1].length
                 let levelStr = level === 1 ? '' : ` colspan="${level}"`
                 let rowspan = match[2] ? ` rowspan="${match[2]}"` : ''
@@ -24,4 +24,4 @@ function listTable(code) {
     return table
 }
 
-export default listTable
+export default extension

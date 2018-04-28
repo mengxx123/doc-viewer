@@ -92,31 +92,4 @@ body {
     padding: 16px;
 }
 
-
-.custom-block.tip {
-    background-color: #f3f5f7;
-    border-color: #42b983;
-}
-.custom-block.danger, .custom-block.tip, .custom-block.warning {
-    padding: .1rem 1.5rem;
-    border-left-width: .5rem;
-    border-left-style: solid;
-    margin: 1rem 0;
-}
-
-.custom-block.warning {
-    background-color: rgba(255,229,100,.3);
-    border-color: #e7c000;
-    color: #6b5900;
-}
-
-.custom-block.danger {
-    background-color: #ffe6e6;
-    border-color: #c00;
-    color: #4d0000;
-}
-
-.md-api {
-    padding: 16px;
-    border: 1px solid #eee;
-}
+@import "../util/markdown-ext/all";

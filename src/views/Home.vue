@@ -28,9 +28,14 @@
 
 <script>
     /* eslint-disable */
-    import listTable from '../util/markdown-ext/listTable'
+    import listTableExt from '../util/markdown-ext/listTable'
     import todoExt from '../util/markdown-ext/todo'
     import apiExt from '../util/markdown-ext/api'
+    import linkExt from '../util/markdown-ext/link'
+    import fileExt from '../util/markdown-ext/file'
+    import directoryExt from '../util/markdown-ext/directory'
+    import colorExt from '../util/markdown-ext/color'
+    import tipExt from '../util/markdown-ext/tip'
     const marked = window.marked
     const Intent = window.Intent
     const yaml = require('js-yaml')
@@ -149,14 +154,12 @@
                 if (window.intent) {
                     this.content = window.intent.data
                 }
-                console.log('隐藏')
 //                $('#article').hide()
                 let _this = this
                 $('.my-article').on('click', 'a', function (e) {
                     e.preventDefault()
                     let link = this
                     let href = link.getAttribute('href')
-                    console.log('打开' + href, location.origin)
                     function getOrigin(url) {
                         let arr = url.split(/[?#]/)
                         let ret = arr[0]
@@ -164,7 +167,6 @@
                         return ret.substring(0, index)
                     }
                     let origin = getOrigin(_this.url)
-                    console.log('比较', href, origin, href.includes(origin))
                     if (href.includes(origin)) {
                         _this.loadTextFromUrl(href)
                     } else {
@@ -172,8 +174,7 @@
                     }
                 })
 
-                console.log('yaml')
-                console.log(yaml.load('greeting: hello\nname: world'))
+//                console.log(yaml.load('greeting: hello\nname: world'))
             },
             edit() {
                 let intent = new Intent({
@@ -182,7 +183,6 @@
                     data: this.content
                 })
                 navigator.startActivity(intent, data => {
-                    console.log('成功了')
                     this.content = data
                     if (this.isMarkdown) {
 // => <pre class="myClassName javascript">console.log("hello");</pre>
@@ -206,24 +206,34 @@
                         let data = response.data
 //                        if (/\.md$/.test(url)) {
                         if (true) {
-                            console.log('markdown')
                             this.isMarkdown = true
                             this.content = data
 
-                            console.log('哈哈')
                             let renderer = new marked.Renderer()
                             let defaultCodeRender = renderer.code
                             renderer.code = (code, language) => {
-                                console.log(code, language)
-                                if (language === 'todo') {
-                                    return todoExt(marked, code)
-                                } if (language === 'table') {
-                                    return listTable(code)
-                                } if (language === 'api') {
-                                    return apiExt(marked, code)
-                                } else {
-                                    let code2 = hljs.highlightAuto(code).value
-                                    return `<pre>
+                                switch (language) {
+                                    case 'todo':
+                                        return todoExt(marked, code)
+                                    case 'table':
+                                        return listTableExt(marked, code)
+                                    case 'link':
+                                        return linkExt(marked, code)
+                                    case 'api':
+                                        return apiExt(marked, code)
+                                    case 'file':
+                                        return fileExt(marked, code)
+                                    case 'directory':
+                                        return directoryExt(marked, code)
+                                    case 'color':
+                                        return colorExt(marked, code)
+                                    case 'tip':
+                                    case 'warning':
+                                    case 'danger':
+                                        return tipExt(marked, code, language)
+                                    default:
+                                        let code2 = hljs.highlightAuto(code).value
+                                        return `<pre>
     <code class="lang-${language}">${code2}</code>
 </pre>`
                                 }
@@ -251,11 +261,12 @@
                                 return ret.substring(0, index)
                             }
                             this.html = marked(data, {
+                                gfm: true,
                                 renderer: renderer,
-                                highlight: code => {
-                                    console.log('高了', code)
-                                    return hljs.highlightAuto(code).value
-                                },
+//                                highlight: code => {
+//                                    console.log('高了', code)
+//                                    return hljs.highlightAuto(code).value
+//                                },
                                 baseUrl: this.url
                             })
 
@@ -274,7 +285,6 @@
                 this.$http.get(url).then(
                     response => {
                         let data = response.data
-                        console.log(data)
                         this.data = data
                         this.title = data.info.title
                         document.title = data.info.title
@@ -295,7 +305,6 @@
                     response => {
                         let data = response.data
                         console.log('策略')
-                        console.log(data)
                         this.sideHtml = marked(data, {
                             baseUrl: this.url
                         })
